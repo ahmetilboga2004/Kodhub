@@ -18,20 +18,20 @@ const layoutType = computed(() => route.meta?.layout?.full ?? false)
             <!-- İLGİLİ LAYOUT KODLARI BURASI DİĞER TEMPLATE KODLARINA KARIŞMA -->
             <div class="container mx-auto py-2 px-2 sm:px-4 lg:py-6 min-h-screen">
                 <div :class="layoutType === false ? 'lg:grid-cols-12' : ''" class="grid grid-cols-1 gap-4">
-                    <aside v-if="layoutType === false" class="lg:col-span-3">
+                    <section v-if="layoutType === false" class="lg:col-span-3">
                         <RouterView name="left"></RouterView>
                         <!-- Sol sütun -->
-                    </aside>
+                    </section>
 
                     <main :class="layoutType === false ? 'lg:col-span-6' : 'lg:col-span-12'" class="lg:order-none">
                         <RouterView></RouterView>
                         <!-- Orta sütun -->
                     </main>
 
-                    <aside v-if="layoutType === false" class="lg:col-span-3">
+                    <section v-if="layoutType === false" class="lg:col-span-3">
                         <RouterView name="right"></RouterView>
                         <!-- Sağ sütun -->
-                    </aside>
+                    </section>
                 </div>
             </div>
 

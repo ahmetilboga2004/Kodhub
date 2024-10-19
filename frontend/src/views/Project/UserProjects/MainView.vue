@@ -10,7 +10,7 @@
         <span>{{ projectStore.error }}</span>
     </div>
     <div v-else>
-        <div v-if="!projectStore.userProjects.Projects || projectStore.userProjects.Projects.length === 0" role="alert"
+        <div v-if="!projectStore.userProjects.projects || projectStore.userProjects.projects.length === 0" role="alert"
             class="alert">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                 class="stroke-info h-6 w-6 shrink-0">
@@ -20,64 +20,74 @@
             <span>{{ projectStore.userProjects.id === authStore.authUser.id ? "Şimdilik herhangi bir projen \
                 yok gibi görünüyor": "Şimdilik bir projesi bulunmuyor" }}</span>
         </div>
-        <div v-else class="grid gap-2 grid-cols-1">
-            <div class="card bg-base-200 transition duration-300 hover:bg-base-300 w-full"
-                v-for="project in projectStore.userProjects.Projects" :key="project.id">
-                <div class="card-body">
-                    <router-link :to="`/projects/${project.id}`">
-                        <h2 class="card-title text-lg font-semibold capitalize cursor-pointer">
-                            {{ project.title }}
-                        </h2>
-                    </router-link>
+        <div v-else>
+            <div class="grid gap-2 grid-cols-1">
 
-                    <RouterLink v-if="project.UserId === authStore.authUser.id"
-                        :to="{ name: 'projects.applications', params: { id: project.id } }"
-                        class="text-xs flex items-center ">
-                        <span>Başvurular</span>
-                        <svg-icon-vue type="mdi" :path="mdiOpenInNew" size="14"></svg-icon-vue>
-                    </RouterLink>
-                    <p class="line-clamp-2 text-pretty">{{ project.desc }}</p>
-                    <div class="mt-1">
-                        <div>
-                            <div class="flex justify-between items-center mb-2">
-                                <h3 class="font-semibold">Pozisyonlar</h3>
-                                <span class="badge badge-md badge-info">{{
-                                    project.Positions.length
-                                }}</span>
-                            </div>
+                <div class="card bg-base-200 transition duration-300 hover:bg-base-300 w-full"
+                    v-for="project in projectStore.userProjects.projects" :key="project.id">
+                    <div class="card-body">
+                        <router-link :to="`/projects/${project.id}`">
+                            <h2 class="card-title text-lg font-semibold capitalize cursor-pointer">
+                                {{ project.title }}
+                            </h2>
+                        </router-link>
 
-                            <div class="flex flex-wrap gap-4 items-center">
-                                <div v-for="position in project.Positions" :key="position.id">
-                                    <h5 class="badge badge-outline text-sm p-3">
-                                        {{ position.title }}
-                                        <span :class="position.status === 'open'
-                                            ? 'badge-success'
-                                            : 'badge-error'
-                                            " class="badge badge-sm ml-2"></span>
-                                    </h5>
+                        <RouterLink v-if="project.UserId === authStore.authUser.id"
+                            :to="{ name: 'projects.applications', params: { id: project.id } }"
+                            class="text-xs flex items-center ">
+                            <span>Başvurular</span>
+                            <svg-icon-vue type="mdi" :path="mdiOpenInNew" size="14"></svg-icon-vue>
+                        </RouterLink>
+                        <p class="line-clamp-2 text-pretty">{{ project.desc }}</p>
+                        <div class="mt-1">
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-semibold">Pozisyonlar</h3>
+                                    <span class="badge badge-md badge-info">{{
+                                        project.Positions.length
+                                    }}</span>
+                                </div>
+
+                                <div class="flex flex-wrap gap-4 items-center">
+                                    <div v-for="position in project.Positions" :key="position.id">
+                                        <h5 class="badge badge-outline text-sm p-3">
+                                            {{ position.title }}
+                                            <span :class="position.status === 'open'
+                                                ? 'badge-success'
+                                                : 'badge-error'
+                                                " class="badge badge-sm ml-2"></span>
+                                        </h5>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div :class="project.UserId === authStore.authUser.id ? 'justify-between' : 'justify-end'"
-                        class="card-actions items-center mt-2">
-                        <router-link v-if="project.UserId === authStore.authUser.id" :to="{
-                            name: 'projects.edit', params:
-                                { id: project.id }
-                        }" class="btn btn-sm btn-primary">
-                            Düzenle
-                        </router-link>
+                        <div :class="project.UserId === authStore.authUser.id ? 'justify-between' : 'justify-end'"
+                            class="card-actions items-center mt-2">
+                            <router-link v-if="project.UserId === authStore.authUser.id" :to="{
+                                name: 'projects.edit', params:
+                                    { id: project.id }
+                            }" class="btn btn-sm btn-primary">
+                                Düzenle
+                            </router-link>
 
-                        <button v-if="project.UserId === authStore.authUser.id" class="btn btn-error btn-sm"
-                            @click="openModal(project)">
-                            Sil
-                        </button>
-                        <button v-if="project.UserId !== authStore.authUser.id"
-                            class="btn justify-end btn-primary btn-sm" @click="applyModal(project)">
-                            Projeye Başvur
-                        </button>
+                            <button v-if="project.UserId === authStore.authUser.id" class="btn btn-error btn-sm"
+                                @click="openModal(project)">
+                                Sil
+                            </button>
+                            <button v-if="project.UserId !== authStore.authUser.id"
+                                class="btn justify-end btn-primary btn-sm" @click="applyModal(project)">
+                                Projeye Başvur
+                            </button>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+
+
+            <div class=" flex justify-center">
+                <Pagination :current-page="projectStore.currentPage.userProjects"
+                    :total-pages="projectStore.totalPages.userProjects" :on-page-change="handlePageChange" />
             </div>
         </div>
     </div>
@@ -113,6 +123,7 @@ import { mdiOpenInNew } from '@mdi/js'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import ProjectApplicationModal from '@/components/ProjectApplicationModal.vue'
+import Pagination from '@/components/PaginationItem.vue'
 
 const authStore = useAuthStore()
 const route = useRoute()
@@ -167,17 +178,26 @@ const applyModal = (project) => {
 const handleModalClose = () => {
     selectedProject.value = null
 }
+
+const handlePageChange = (page) => {
+    projectStore.getUserProjects(route.params.username, page)
+}
+
 watch(
     () => route.params.username,
     (newUsername) => {
         if (newUsername) {
-            projectStore.getUserProjects(newUsername)
+            projectStore.getUserProjects(newUsername, 1)
         }
     }
 )
-
+watch(() => projectStore.filters.userProjects, () => {
+    projectStore.getUserProjects(route.params.username, 1)
+}, { deep: true })
 
 onMounted(() => {
-    projectStore.getUserProjects(route.params.username)
+    if (route.params.username) {
+        projectStore.getUserProjects(route.params.username, 1)
+    }
 })
 </script>

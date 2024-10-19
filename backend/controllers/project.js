@@ -5,42 +5,36 @@ import sequelize from "../config/database.js";
 import Position from "../models/position.js";
 import User from "../models/user.js";
 import Application from "../models/application.js";
+import buildWhereClause from "../utils/buildWhereClause.js";
 
 export const getAllProjects = async (req, res, next) => {
 	try {
 		const { status, search, page = 1, limit = 3 } = req.query;
-		let whereClause = {};
+		console.log("status: ", status);
+		console.log("search: ", search);
+
+		let whereClause = buildWhereClause(status, search);
 
 		if (req.user) {
 			const userId = req.user.id;
 			whereClause = {
+				...whereClause,
 				UserId: { [Op.ne]: userId },
 			};
 		}
 
-		if (status) {
-			whereClause.status = status;
-		} else {
-			whereClause.status = "open";
-		}
+		console.log("whereClause: ", whereClause);
 
-		if (search) {
-			whereClause[Op.and] = [
-				{
-					[Op.or]: [
-						{ title: { [Op.like]: `%${search}%` } },
-						{ desc: { [Op.like]: `%${search}%` } },
-					],
-				},
-			];
-		}
+		// Önce toplam proje sayısını al
+		const totalCount = await Project.count({ where: whereClause });
 
 		const offset = (page - 1) * limit;
+		const effectiveLimit = Math.min(parseInt(limit), totalCount - offset);
 
-		const { rows: projects, count } = await Project.findAndCountAll({
+		const { rows: projects } = await Project.findAndCountAll({
 			where: whereClause,
 			order: [["createdAt", "DESC"]],
-			limit: parseInt(limit),
+			limit: effectiveLimit,
 			offset: parseInt(offset),
 			include: [
 				{
@@ -54,10 +48,17 @@ export const getAllProjects = async (req, res, next) => {
 			],
 		});
 
-		const totalPages = Math.ceil(count / limit);
+		const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+
+		console.log("total pages: ", totalPages);
+		console.log("limit: ", limit);
+		console.log("effective limit: ", effectiveLimit);
+		console.log("count: ", totalCount);
+		console.log("offset: ", offset);
+		console.log("projects length: ", projects.length);
 
 		sendResponse(res, 200, "istek başarılı", {
-			count,
+			count: totalCount,
 			totalPages,
 			currentPage: parseInt(page),
 			projects,

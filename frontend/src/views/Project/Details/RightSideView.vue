@@ -40,7 +40,8 @@
                     <span>Oluşturulma Tarihi:</span>
                     <span>{{ format(projectStore.project.createdAt, "dd/MM/yyyy HH:mm") }}</span>
                 </div>
-                <div v-if="projectStore.project.UserId === authStore.authUser.id" class="flex justify-between">
+                <div v-if="authStore.authUser && projectStore.project.UserId === authStore.authUser.id"
+                    class="flex justify-between">
                     <span>Toplam Başvuru:</span>
                     <span>{{ projectStore.project.totalApplications || 0 }}</span>
                 </div>

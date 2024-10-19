@@ -23,12 +23,13 @@ const router = createRouter({
             name: 'projects',
             components: {
                 default: () => import('@/views/Project/Projects/MainView.vue'),
-                left: () => import('@/views/Project/Projects/LeftSideView.vue')
+                left: () => import('@/components/FilterItem.vue')
             },
             meta: {
                 layout: {
                     full: false
-                }
+                },
+                filterType: 'all'
             }
         },
         {
@@ -80,11 +81,13 @@ const router = createRouter({
             path: '/@:username/projects',
             name: 'user.projects',
             components: {
+                left: () => import('@/components/FilterItem.vue'),
                 default: () => import('@/views/Project/UserProjects/MainView.vue'),
                 right: () => import('@/views/Project/UserProjects/RightSideView.vue')
             },
             meta: {
-                requireAuth: true
+                requireAuth: true,
+                filterType: 'userProjects'
             }
         },
         {
@@ -95,7 +98,8 @@ const router = createRouter({
                 right: () => import('@/views/Project/UserJoinedProjects/RightSideView.vue')
             },
             meta: {
-                requireAuth: true
+                requireAuth: true,
+                filterType: 'userJoined'
             }
         },
         {

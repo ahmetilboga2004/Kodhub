@@ -63,41 +63,8 @@
                 </div>
             </div>
             <div class=" flex justify-center">
-                <div class="flex justify-center">
-                    <div class="join mt-4">
-                        <button class="join-item btn" :disabled="projectStore.currentPage === 1"
-                            @click="projectStore.getAllProjects(projectStore.currentPage - 1)">
-                            «
-                        </button>
-
-                        <button v-if="projectStore.currentPage > 3" class="join-item btn"
-                            @click="projectStore.getAllProjects(1)">
-                            1
-                        </button>
-
-                        <button v-if="projectStore.currentPage > 4" class="join-item btn btn-disabled">...</button>
-
-                        <template v-for="page in visiblePages" :key="page">
-                            <button @click="projectStore.getAllProjects(page)"
-                                :class="['join-item btn', { 'btn-active': page === projectStore.currentPage }]">
-                                {{ page }}
-                            </button>
-                        </template>
-
-                        <button v-if="projectStore.currentPage < projectStore.totalPages - 3"
-                            class="join-item btn btn-disabled">...</button>
-
-                        <button v-if="projectStore.currentPage < projectStore.totalPages - 2" class="join-item btn"
-                            @click="projectStore.getAllProjects(projectStore.totalPages)">
-                            {{ projectStore.totalPages }}
-                        </button>
-
-                        <button class="join-item btn" :disabled="projectStore.currentPage === projectStore.totalPages"
-                            @click="projectStore.getAllProjects(projectStore.currentPage + 1)">
-                            »
-                        </button>
-                    </div>
-                </div>
+                <Pagination :current-page="projectStore.currentPage.all" :total-pages="projectStore.totalPages.all"
+                    :on-page-change="handlePageChange" />
             </div>
 
         </div>
@@ -109,9 +76,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useProjectStore } from '@/stores/project'
 import ProjectApplicationModal from '@/components/ProjectApplicationModal.vue'
+import Pagination from '@/components/PaginationItem.vue';
 
 const applicationModal = ref(null)
 const selectedProject = ref(null)
@@ -129,23 +97,17 @@ const handleModalClose = () => {
 
 const projectStore = useProjectStore()
 
-// Görünür sayfaları hesapla
-const visiblePages = computed(() => {
-    const currentPage = projectStore.currentPage
-    const totalPages = projectStore.totalPages
-
-    let start = Math.max(currentPage - 2, 1)
-    let end = Math.min(start + 4, totalPages)
-
-    if (end - start < 4) {
-        start = Math.max(end - 4, 1)
-    }
-
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i)
-})
+const handlePageChange = (page) => {
+    console.log('Page change requested:', page)
+    projectStore.getAllProjects(page)
+}
 
 onMounted(() => {
     projectStore.getAllProjects()
 })
 
+// Filtrelerin değişimini izle
+watch(() => projectStore.filters.all, () => {
+    projectStore.getAllProjects(1) // Filtreler değiştiğinde ilk sayfaya dön
+}, { deep: true })
 </script>

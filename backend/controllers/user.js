@@ -2,6 +2,8 @@ import sendResponse from "../utils/sendResponse.js";
 import User from "../models/user.js";
 import Project from "../models/project.js";
 import Position from "../models/position.js";
+import { Op } from "sequelize";
+import buildWhereClause from "../utils/buildWhereClause.js";
 
 export const myProfile = (req, res, next) => {
 	// Burda profil bilgileri alınacak
@@ -79,45 +81,68 @@ export const getUserProfile = async (req, res, next) => {
 export const getUserProjects = async (req, res, next) => {
 	try {
 		const username = req.params.username;
+		const { status, search, page = 1, limit = 3 } = req.query;
+
+		let whereClause = buildWhereClause(status, search);
+
 		const user = await User.findOne({
-			where: {
-				username,
-			},
+			where: { username },
 			attributes: [
 				"id",
 				"username",
 				"firstName",
 				"lastName",
-				"title",
 				"createdAt",
+				"title",
 			],
-			include: {
-				model: Project,
-				include: Position,
-			},
 		});
+
 		if (!user) {
 			return sendResponse(res, 404, "Kullanıcı bulunamadı");
 		}
-		sendResponse(
-			res,
-			200,
-			"Proje bilgileri başarılı bir şekilde alındı",
-			user
-		);
+
+		whereClause = {
+			...whereClause,
+			UserId: user.id,
+		};
+
+		// Önce toplam proje sayısını al
+		const totalCount = await Project.count({ where: whereClause });
+
+		const offset = (page - 1) * limit;
+		const effectiveLimit = Math.min(parseInt(limit), totalCount - offset);
+
+		const projects = await Project.findAll({
+			where: whereClause,
+			order: [["createdAt", "DESC"]],
+			limit: effectiveLimit,
+			offset: parseInt(offset),
+			include: {
+				model: Position,
+			},
+		});
+
+		const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+
+		sendResponse(res, 200, "Proje bilgileri başarılı bir şekilde alındı", {
+			count: totalCount,
+			totalPages,
+			currentPage: parseInt(page),
+			projects,
+			user,
+		});
 	} catch (error) {
 		next(error);
 	}
 };
-
 export const getJoinedProjects = async (req, res, next) => {
 	try {
 		const username = req.params.username;
+		const { search, status, page = 1, limit = 3 } = req.query;
+		let whereClause = buildWhereClause(status, search);
 
 		const user = await User.findOne({
-			where: {
-				username,
-			},
+			where: { username },
 			attributes: [
 				"id",
 				"username",
@@ -127,11 +152,32 @@ export const getJoinedProjects = async (req, res, next) => {
 				"createdAt",
 			],
 		});
+
 		if (!user) {
 			return sendResponse(res, 404, "Kullanıcı bulunamadı");
 		}
 
+		const positionWhereClause = {
+			status: "filled",
+			UserId: user.id,
+		};
+
+		// Önce toplam proje sayısını al
+		const totalCount = await Project.count({
+			where: whereClause,
+			include: [
+				{
+					model: Position,
+					where: positionWhereClause,
+				},
+			],
+		});
+
+		const offset = (page - 1) * limit;
+		const effectiveLimit = Math.min(parseInt(limit), totalCount - offset);
+
 		const projects = await Project.findAll({
+			where: whereClause,
 			include: [
 				{
 					model: User,
@@ -139,13 +185,15 @@ export const getJoinedProjects = async (req, res, next) => {
 				},
 				{
 					model: Position,
-					where: {
-						status: "filled",
-						UserId: user.id,
-					},
+					where: positionWhereClause,
 				},
 			],
+			limit: effectiveLimit,
+			offset: parseInt(offset),
+			order: [["createdAt", "DESC"]],
 		});
+
+		const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
 		const joinedProjects = {
 			id: user.id,
@@ -154,20 +202,22 @@ export const getJoinedProjects = async (req, res, next) => {
 			lastName: user.lastName,
 			title: user.title,
 			createdAt: user.createdAt,
+			count: totalCount,
+			totalPages,
+			currentPage: parseInt(page),
 			projects,
 		};
 
 		sendResponse(
 			res,
 			200,
-			"Kullanıcının katıldığı proje bilgilleri alındı",
+			"Kullanıcının katıldığı proje bilgileri alındı",
 			joinedProjects
 		);
 	} catch (error) {
 		next(error);
 	}
 };
-
 export const updateProfile = (req, res, next) => {
 	// Burda profil güncelleme işlemleri yapılacak
 	return res.status(200).json({

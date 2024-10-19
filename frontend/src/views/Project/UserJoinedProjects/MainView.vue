@@ -21,50 +21,57 @@
                 projectStore.userJoinedProjects.id === authStore.authUser.id ? "Şimdilik herhangi bir projeye \
                 katılmadın" : "Şimdilik Katıldığı bir proje yok" }}</span>
         </div>
-        <div v-else class="grid gap-2 grid-cols-1">
-            <div class="card bg-base-200 transition duration-300 hover:bg-base-300 w-full"
-                v-for="project in projectStore.userJoinedProjects.projects" :key="project.id">
-                <div class="card-body">
-                    <RouterLink :to="{ name: 'user.profile', params: { username: project.User.username } }"
-                        class="capitalize text-xs text-gray-400">
-                        {{ project.User.firstName }} {{ project.User.lastName }}
-                    </RouterLink>
-                    <router-link :to="`/projects/${project.id}`">
-                        <h2 class="card-title text-lg font-semibold capitalize cursor-pointer">
-                            {{ project.title }}
-                        </h2>
-                    </router-link>
+        <div v-else>
+            <div class="grid gap-2 grid-cols-1">
+                <div class="card bg-base-200 transition duration-300 hover:bg-base-300 w-full"
+                    v-for="project in projectStore.userJoinedProjects.projects" :key="project.id">
+                    <div class="card-body">
+                        <RouterLink :to="{ name: 'user.profile', params: { username: project.User.username } }"
+                            class="capitalize text-xs text-gray-400">
+                            {{ project.User.firstName }} {{ project.User.lastName }}
+                        </RouterLink>
+                        <router-link :to="`/projects/${project.id}`">
+                            <h2 class="card-title text-lg font-semibold capitalize cursor-pointer">
+                                {{ project.title }}
+                            </h2>
+                        </router-link>
 
-                    <RouterLink v-if="project.UserId === authStore.authUser.id"
-                        :to="{ name: 'projects.applications', params: { id: project.id } }"
-                        class="text-xs flex items-center ">
-                        <span>Başvurular</span>
-                        <svg-icon-vue type="mdi" :path="mdiOpenInNew" size="14"></svg-icon-vue>
-                    </RouterLink>
-                    <p class="line-clamp-2 text-pretty">{{ project.desc }}</p>
-                    <div class="mt-1">
-                        <div>
-                            <div class="flex justify-between items-center mb-2">
-                                <h3 class="font-semibold">Pozisyonlar</h3>
-                                <span class="badge badge-md badge-info">{{
-                                    project.Positions.length
-                                }}</span>
-                            </div>
+                        <RouterLink v-if="project.UserId === authStore.authUser.id"
+                            :to="{ name: 'projects.applications', params: { id: project.id } }"
+                            class="text-xs flex items-center ">
+                            <span>Başvurular</span>
+                            <svg-icon-vue type="mdi" :path="mdiOpenInNew" size="14"></svg-icon-vue>
+                        </RouterLink>
+                        <p class="line-clamp-2 text-pretty">{{ project.desc }}</p>
+                        <div class="mt-1">
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-semibold">Pozisyonlar</h3>
+                                    <span class="badge badge-md badge-info">{{
+                                        project.Positions.length
+                                        }}</span>
+                                </div>
 
-                            <div class="flex flex-wrap gap-4 items-center">
-                                <div v-for="position in project.Positions" :key="position.id">
-                                    <h5 class="badge badge-outline text-sm p-3">
-                                        {{ position.title }}
-                                        <span :class="position.status === 'open'
-                                            ? 'badge-success'
-                                            : 'badge-error'
-                                            " class="badge badge-sm ml-2"></span>
-                                    </h5>
+                                <div class="flex flex-wrap gap-4 items-center">
+                                    <div v-for="position in project.Positions" :key="position.id">
+                                        <h5 class="badge badge-outline text-sm p-3">
+                                            {{ position.title }}
+                                            <span :class="position.status === 'open'
+                                                ? 'badge-success'
+                                                : 'badge-error'
+                                                " class="badge badge-sm ml-2"></span>
+                                        </h5>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class=" flex justify-center">
+                <Pagination :current-page="projectStore.currentPage.userJoined"
+                    :total-pages="projectStore.totalPages.userJoined" :on-page-change="handlePageChange" />
             </div>
         </div>
     </div>
@@ -79,11 +86,16 @@ import { useProjectStore } from '@/stores/project';
 import { useAuthStore } from "@/stores/auth"
 import svgIconVue from '@jamescoyle/vue-icon';
 import { mdiOpenInNew } from '@mdi/js';
+import Pagination from '@/components/PaginationItem.vue';
 
 
 const authStore = useAuthStore()
 const projectStore = useProjectStore()
 const route = useRoute()
+
+const handlePageChange = (page) => {
+    projectStore.getUserJoinedProjects(route.params.username, page)
+}
 
 watch(
     () => route.params.username,
@@ -93,6 +105,10 @@ watch(
         }
     }
 )
+watch(() => projectStore.filters.userJoined, () => {
+    projectStore.getUserJoinedProjects(route.params.username, 1)
+}, { deep: true })
+
 
 onMounted(() => {
     projectStore.getUserJoinedProjects(route.params.username)

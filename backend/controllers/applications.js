@@ -211,16 +211,16 @@ export const updateStatus = async (req, res, next) => {
 			).length;
 			const totalPositions = project.Positions.length;
 
-			if (filledPositions > 0 && filledPositions < totalPositions) {
-				// Bazı pozisyonlar dolu, bazıları boşsa projeyi "partial filled" yap
-				await Project.update(
-					{ status: "partial filled" },
-					{ where: { id: project.id }, transaction: t }
-				);
-			} else if (filledPositions === totalPositions) {
+			if (filledPositions === totalPositions) {
 				// Tüm pozisyonlar dolmuşsa projeyi "filled" yap
 				await Project.update(
 					{ status: "filled" },
+					{ where: { id: project.id }, transaction: t }
+				);
+			} else if (filledPositions > 0) {
+				// En az bir pozisyon doluysa projeyi "partial filled" yap
+				await Project.update(
+					{ status: "partial filled" },
 					{ where: { id: project.id }, transaction: t }
 				);
 			}

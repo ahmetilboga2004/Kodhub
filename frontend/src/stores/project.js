@@ -188,7 +188,7 @@ export const useProjectStore = defineStore('project', () => {
             console.log(response.data.data)
         } catch (err) {
             console.error(err)
-            error.value = err.response.data.message
+            error.value = err.response?.data?.message
         } finally {
             isLoading.value = false
         }
@@ -203,7 +203,22 @@ export const useProjectStore = defineStore('project', () => {
             console.log(response.data.data)
         } catch (err) {
             console.error(err)
-            error.value = err.response.data.message
+            error.value = err.response?.data?.message
+        }
+    }
+
+    async function updateProjectStatus(id, status) {
+        isLoading.value = true
+        error.value = null
+        try {
+            const response = await apiClient.put(`/projects/status/${id}`, { status })
+            console.log(response.data)
+            return response.data.message
+        } catch (err) {
+            console.error(err)
+            throw err
+        } finally {
+            isLoading.value = false
         }
     }
 
@@ -227,6 +242,7 @@ export const useProjectStore = defineStore('project', () => {
         getUserJoinedProjects,
         deleteProject,
         getApplications,
-        getProfile
+        getProfile,
+        updateProjectStatus
     }
 })

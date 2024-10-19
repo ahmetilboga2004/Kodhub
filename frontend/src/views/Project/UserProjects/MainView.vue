@@ -45,7 +45,7 @@
                                     <h3 class="font-semibold">Pozisyonlar</h3>
                                     <span class="badge badge-md badge-info">{{
                                         project.Positions.length
-                                    }}</span>
+                                        }}</span>
                                 </div>
 
                                 <div class="flex flex-wrap gap-4 items-center">
@@ -63,17 +63,28 @@
                         </div>
                         <div :class="project.UserId === authStore.authUser.id ? 'justify-between' : 'justify-end'"
                             class="card-actions items-center mt-2">
-                            <router-link v-if="project.UserId === authStore.authUser.id" :to="{
-                                name: 'projects.edit', params:
-                                    { id: project.id }
-                            }" class="btn btn-sm btn-primary">
-                                Düzenle
-                            </router-link>
-
                             <button v-if="project.UserId === authStore.authUser.id" class="btn btn-error btn-sm"
                                 @click="openModal(project)">
                                 Sil
                             </button>
+                            <div v-if="project.UserId === authStore.authUser.id" class=" flex items-center space-x-2">
+                                <router-link :to="{
+                                    name: 'projects.edit', params:
+                                        { id: project.id }
+                                }" class="btn btn-sm btn-neutral btn-outline">
+                                    Düzenle
+                                </router-link>
+                                <!-- UPDATE STATUS BUTONU -->
+                                <div v-if="project.status === 'filled' || project.status === 'in progress'"
+                                    class="tooltip tooltip-bottom" :data-tip="getStatusUpdateTooltip(project.status)">
+                                    <button class="btn btn-circle btn-sm"
+                                        :class="getStatusUpdateButtonClass(project.status)"
+                                        @click="openUpdateStatusModal(project)" :disabled="isUpdating">
+                                        <span v-if="isUpdating" class="loading loading-spinner loading-sm"></span>
+                                        <svgIconVue v-else type="mdi" :path="mdiPlay" size="24"></svgIconVue>
+                                    </button>
+                                </div>
+                            </div>
                             <button v-if="project.UserId !== authStore.authUser.id"
                                 class="btn justify-end btn-primary btn-sm" @click="applyModal(project)">
                                 Projeye Başvur
@@ -92,7 +103,7 @@
         </div>
     </div>
 
-    <!-- Modal -->
+    <!-- Delete Modal -->
     <dialog ref="deleteModal" class="modal modal-bottom sm:modal-middle">
         <div class="modal-box">
             <h3 class="text-lg font-bold">Projeyi Sil</h3>
@@ -103,6 +114,21 @@
                 <button class="btn btn-error" :disabled="isDeleting" @click="deleteProject">
                     <span v-if="isDeleting" class="loading loading-spinner loading-sm"></span>
                     Sil
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Update Status Modal -->
+    <dialog ref="updateStatusModal" class="modal modal-bottom sm:modal-middle">
+        <div class="modal-box">
+            <h3 class="text-lg font-bold">Proje Durumunu Güncelle</h3>
+            <p class="py-2">{{ getUpdateStatusConfirmationMessage() }}</p>
+            <div class="modal-action">
+                <button class="btn" @click="closeUpdateStatusModal">Vazgeç</button>
+                <button class="btn btn-primary" :disabled="isUpdating" @click="confirmUpdateProjectStatus">
+                    <span v-if="isUpdating" class="loading loading-spinner loading-sm"></span>
+                    Evet, Güncelle
                 </button>
             </div>
         </div>
@@ -119,7 +145,7 @@ import { useProjectStore } from '@/stores/project'
 import { useToast } from 'vue-toastification'
 import { RouterLink } from 'vue-router'
 import svgIconVue from '@jamescoyle/vue-icon'
-import { mdiOpenInNew } from '@mdi/js'
+import { mdiOpenInNew, mdiPlay } from '@mdi/js'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import ProjectApplicationModal from '@/components/ProjectApplicationModal.vue'
@@ -131,8 +157,9 @@ const toast = useToast()
 const projectStore = useProjectStore()
 const applicationModal = ref(null)
 
-const deleteModal = ref(null)
 const selectedProject = ref(null)
+
+const deleteModal = ref(null)
 const isDeleting = ref(false)
 const isDeleteModalOpen = ref(false)
 
@@ -177,6 +204,72 @@ const applyModal = (project) => {
 
 const handleModalClose = () => {
     selectedProject.value = null
+}
+
+const updateStatusModal = ref(null)
+const isUpdating = ref(false)
+
+const getStatusUpdateTooltip = (status) => {
+    if (status === "filled") return "Projeyi Başlat"
+    if (status === "in progress") return "Projeyi Tamamla"
+    return "Durum Güncelle"
+}
+
+const getStatusUpdateButtonClass = (status) => {
+    if (status === "filled") return "btn-success"
+    if (status === "in progress") return "btn-info"
+    return "btn-primary"
+}
+
+const openUpdateStatusModal = (project) => {
+    selectedProject.value = project
+    nextTick(() => {
+        updateStatusModal.value?.showModal()
+    })
+}
+
+const closeUpdateStatusModal = () => {
+    updateStatusModal.value?.close()
+    selectedProject.value = null
+}
+
+const getUpdateStatusConfirmationMessage = () => {
+    if (!selectedProject.value) return ''
+    if (selectedProject.value.status === "filled") {
+        return "Projeyi başlatmak istediğinizden emin misiniz?"
+    }
+    if (selectedProject.value.status === "in progress") {
+        return "Projeyi tamamlamak istediğinizden emin misiniz?"
+    }
+    return "Proje durumunu güncellemek istediğinizden emin misiniz?"
+}
+
+const confirmUpdateProjectStatus = async () => {
+    if (!selectedProject.value || isUpdating.value) return
+
+    let newStatus
+    if (selectedProject.value.status === "filled") {
+        newStatus = "in progress"
+    } else if (selectedProject.value.status === "in progress") {
+        newStatus = "complated"
+    } else {
+        toast.warning("Bu proje durumu güncellenemez.")
+        closeUpdateStatusModal()
+        return
+    }
+
+    isUpdating.value = true
+    try {
+        const message = await projectStore.updateProjectStatus(selectedProject.value.id, newStatus)
+        toast.success(message)
+        await projectStore.getUserProjects(route.params.username)
+        closeUpdateStatusModal()
+    } catch (error) {
+        console.error(error)
+        toast.error(error.response?.data?.message || 'Durum güncellenirken bir hata oluştu')
+    } finally {
+        isUpdating.value = false
+    }
 }
 
 const handlePageChange = (page) => {

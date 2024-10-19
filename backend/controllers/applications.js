@@ -120,12 +120,12 @@ export const createApplication = async (req, res, next) => {
 		next(error);
 	}
 };
+
 export const updateStatus = async (req, res, next) => {
 	const t = await sequelize.transaction();
 	try {
 		const id = req.params.id;
 		const status = req.body.status;
-
 		if (!["accepted", "rejected"].includes(status)) {
 			return sendResponse(
 				res,
@@ -141,10 +141,6 @@ export const updateStatus = async (req, res, next) => {
 				include: {
 					model: Project,
 					attributes: ["UserId", "id"],
-					include: {
-						model: Position, // Projedeki diğer pozisyonları al
-						attributes: ["status"],
-					},
 				},
 			},
 			transaction: t,
@@ -172,7 +168,7 @@ export const updateStatus = async (req, res, next) => {
 		}
 
 		application.status = status;
-		await application.save();
+		await application.save({ transaction: t });
 
 		if (status === "accepted") {
 			const [updatedPositionCount] = await Position.update(
@@ -188,7 +184,7 @@ export const updateStatus = async (req, res, next) => {
 				);
 			}
 
-			// Diğer tüm "pending" başvuruları "iptal edildi" olarak güncelle
+			// Diğer tüm "pending" başvuruları "cancelled" olarak güncelle
 			await Application.update(
 				{ status: "cancelled" },
 				{
@@ -200,23 +196,29 @@ export const updateStatus = async (req, res, next) => {
 				}
 			);
 
-			// Projedeki pozisyonların durumu kontrol et
-			const project = application.Position.Project;
+			// Projedeki pozisyonların durumunu kontrol et
+			const project = await Project.findOne({
+				where: { id: application.Position.Project.id },
+				include: {
+					model: Position,
+					attributes: ["status"],
+				},
+				transaction: t,
+			});
+
 			const filledPositions = project.Positions.filter(
 				(pos) => pos.status === "filled"
 			).length;
+			const totalPositions = project.Positions.length;
 
-			if (
-				filledPositions > 0 &&
-				filledPositions < project.Positions.length
-			) {
-				// Eğer bazı pozisyonlar dolu, bazıları boşsa projeyi "partial filled" yap
+			if (filledPositions > 0 && filledPositions < totalPositions) {
+				// Bazı pozisyonlar dolu, bazıları boşsa projeyi "partial filled" yap
 				await Project.update(
 					{ status: "partial filled" },
 					{ where: { id: project.id }, transaction: t }
 				);
-			} else if (filledPositions === project.Positions.length) {
-				// Eğer tüm pozisyonlar dolmuşsa projeyi "fully filled" yap
+			} else if (filledPositions === totalPositions) {
+				// Tüm pozisyonlar dolmuşsa projeyi "filled" yap
 				await Project.update(
 					{ status: "filled" },
 					{ where: { id: project.id }, transaction: t }

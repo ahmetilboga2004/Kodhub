@@ -23,8 +23,8 @@ export const useProjectStore = defineStore('project', () => {
     })
     const filters = ref({
         all: { search: '', status: 'open' },
-        userProjects: { search: '', status: 'open' },
-        userJoined: { search: '', status: 'open' }
+        userProjects: { search: '', status: 'all' },
+        userJoined: { search: '', status: 'all' }
     })
 
     async function getAllProjects(page = 1, newFilters = null) {

@@ -1,5 +1,5 @@
 <template>
-    <div class="card bg-base-200">
+    <div class="card bg-base-200 sticky top-4">
         <div class="card-body">
             <h3 class="card-title">Filtreler</h3>
 

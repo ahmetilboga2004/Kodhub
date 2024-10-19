@@ -22,8 +22,8 @@ const router = createRouter({
             path: '/projects',
             name: 'projects',
             components: {
-                default: () => import('@/views/Project/Projects/MainView.vue'),
-                left: () => import('@/components/FilterItem.vue')
+                left: () => import('@/components/FilterItem.vue'),
+                default: () => import('@/views/Project/Projects/MainView.vue')
             },
             meta: {
                 layout: {
@@ -94,6 +94,7 @@ const router = createRouter({
             path: '/@:username/joined-projects',
             name: 'user.projects.joined',
             components: {
+                left: () => import('@/components/FilterItem.vue'),
                 default: () => import('@/views/Project/UserJoinedProjects/MainView.vue'),
                 right: () => import('@/views/Project/UserJoinedProjects/RightSideView.vue')
             },

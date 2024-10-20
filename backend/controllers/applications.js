@@ -4,6 +4,8 @@ import Project from "../models/project.js";
 import Position from "../models/position.js";
 import User from "../models/user.js";
 import sequelize from "../config/database.js";
+import { userEventSenders } from "../routes/events.js";
+import { where } from "sequelize";
 
 export const getAllApplications = async (req, res, next) => {
 	try {
@@ -70,7 +72,7 @@ export const createApplication = async (req, res, next) => {
 			},
 			include: {
 				model: Project,
-				attributes: ["UserId"],
+				attributes: ["id", "UserId"],
 			},
 		});
 		if (!existPosition) {
@@ -114,6 +116,28 @@ export const createApplication = async (req, res, next) => {
 		});
 		if (!application) {
 			return sendResponse(res, 400, "Başvuru yapılamadı");
+		}
+		// BURADAN İTİBAREN EVENTS OLAYI YAPILIYOR YANİ BİLDİRİM YOLLUYORUZ
+		if (application) {
+			const projectOwnerId = existPosition.Project.UserId;
+			const sendEventToOwner = userEventSenders.get(
+				projectOwnerId.toString()
+			);
+			if (sendEventToOwner) {
+				console.log("application user ıd: ", application.UserId);
+				const applyOwner = await User.findOne({
+					where: {
+						id: application.UserId,
+					},
+					attributes: ["id", "firstName", "lastName", "username"],
+				});
+				console.log("applyOwner: ", applyOwner);
+				sendEventToOwner({
+					type: "newApplication",
+					message: `${applyOwner.firstName} ${applyOwner.lastName} kullanıcısı ${existPosition.Project.title} projenizin ${existPosition.title} pozisyonuna başvuru yaptı`,
+					url: `/projects/${existPosition.Project.id}`,
+				});
+			}
 		}
 		sendResponse(res, 201, "Başvurunuz alındı");
 	} catch (error) {

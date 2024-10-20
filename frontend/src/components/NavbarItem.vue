@@ -51,6 +51,7 @@
 
                 <!-- Kullanıcı giriş yapmışsa -->
                 <template v-if="isFullyAuthenticated">
+                    <Notification></Notification>
                     <div class="dropdown dropdown-end">
                         <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
                             <div class="w-10 rounded-full">
@@ -105,6 +106,7 @@ import apiClient from '@/services/axios'
 import ThemeController from './ThemeController.vue'
 import SvgIcon from '@jamescoyle/vue-icon'
 import { mdiLogin, mdiAccountPlus } from '@mdi/js'
+import Notification from './NotificationItem.vue'
 
 const router = useRouter()
 const toast = useToast()

@@ -49,7 +49,7 @@
                                     <h3 class="font-semibold">Pozisyonlar</h3>
                                     <span class="badge badge-md badge-info">{{
                                         project.Positions.length
-                                        }}</span>
+                                    }}</span>
                                 </div>
 
                                 <div class="flex flex-wrap gap-4 items-center">
@@ -101,7 +101,7 @@ watch(
     () => route.params.username,
     (newUsername) => {
         if (newUsername) {
-            projectStore.getUserJoinedProjects(newUsername)
+            projectStore.getUserJoinedProjects(newUsername, 1)
         }
     }
 )
@@ -111,6 +111,8 @@ watch(() => projectStore.filters.userJoined, () => {
 
 
 onMounted(() => {
-    projectStore.getUserJoinedProjects(route.params.username)
+    if (route.params.username) {
+        projectStore.getUserJoinedProjects(route.params.username, 1)
+    }
 })
 </script>

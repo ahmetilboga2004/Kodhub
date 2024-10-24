@@ -40,7 +40,7 @@
                                 <h3 class="font-semibold">Pozisyonlar</h3>
                                 <span class="badge badge-md badge-info">{{
                                     project.Positions.length
-                                    }}</span>
+                                }}</span>
                             </div>
                             <div class="flex flex-wrap gap-4 items-center">
                                 <div v-for="position in project.Positions" :key="position.id">
